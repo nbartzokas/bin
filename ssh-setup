@@ -1,0 +1,31 @@
+#!/bin/bash
+# Appends your rsa FILE to remote HOST's authorized_keys.
+# Creates rsa FILE if none found.
+# FILE defaults to ~/.ssh/id_rsa
+
+usage(){
+  echo usage: ssh-setup [USER@]HOST [FILE]
+}
+
+if [[ $# -lt 1 ]]; then usage; exit 0; fi
+
+HOST=$1
+FILE=${2:-~/.ssh/id_rsa}
+FILE_PATH=${FILE%/*}
+FILE_WO_PATH=${FILE##*/}
+
+echo Setting up ssh key file $FILE on host $HOST...
+
+mkdir -p ${FILE_PATH}
+if [ ! -e ${FILE}.pub ]; then
+  echo Did not find ${FILE}.pub; creating...
+  ssh-keygen -t rsa -f ${FILE} -N ""
+fi
+
+echo Copying ${FILE}.pub to ${HOST}...
+scp -o StrictHostKeyChecking=no ${FILE}.pub ${HOST}:~/.
+
+echo Adding ${FILE}.pub to ${HOST}:~/.ssh/authorized_keys...
+ssh -o StrictHostKeyChecking=no ${HOST} "mkdir -p .ssh; chmod 700 .ssh; touch .ssh/authorized_keys; grep -q '$(cat ${FILE}.pub)' .ssh/authorized_keys || cat ~/${FILE_WO_PATH}.pub >> .ssh/authorized_keys; chmod 600 .ssh/authorized_keys; rm ~/${FILE_WO_PATH}.pub"
+
+echo Done.

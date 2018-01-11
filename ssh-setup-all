@@ -1,0 +1,82 @@
+#!/bin/bash
+# Appends your rsa FILE to remote hosts' authorized_keys found in HOSTS.
+# Creates rsa FILE if none found.
+# FILE defaults to ~/.ssh/id_rsa
+
+usage(){
+  echo usage: ssh-setup-all HOSTS [FILE]
+}
+
+if [[ $# -lt 1 ]]; then usage; exit 0; fi
+
+HOSTS=$1
+FILE=${2:-~/.ssh/id_rsa}
+FILE_PATH=${FILE%/*}
+FILE_WO_PATH=${FILE##*/}
+
+echo Setting up ssh key file $FILE on hosts in $HOSTS...
+
+read -s -p "Password:" PW; echo;
+
+mkdir -p ${FILE_PATH}
+if [ ! -e ${FILE}.pub ]; then
+  echo Did not find ${FILE}.pub; creating...
+  ssh-keygen -t rsa -f ${FILE} -N ""
+fi
+
+IFSsave="$IFS"; IFS=$'\n' # temporarily change Internal Field Separator to newline
+
+for HOST in `cat ${HOSTS}`; do
+
+    # ignore blank and commented lines
+    if [[ $HOST != \#* ]] && [ ${#HOST} -ne 0 ]; then
+
+        echo Copying ${FILE}.pub to ${HOST}...
+        expect -c "
+            set timeout -1;
+            spawn scp -o StrictHostKeyChecking=no ${FILE}.pub ${HOST}:~/.;
+            match_max 100000;
+            expect {
+                timeout {
+                    send_user \"timed out waiting for password prompt\n\"
+                    exit 1
+                }
+                eof {
+                    send_user \"ssh disconnected\n\"
+                    exit 1
+                }
+                *assword:* { 
+                    send ${PW}\n
+                    exp_continue
+                }
+            }
+            "
+
+        echo Adding ${FILE}.pub to ${HOST}:~/.ssh/authorized_keys...
+        expect -c "
+            set timeout -1;
+            spawn ssh -o StrictHostKeyChecking=no ${HOST} \"mkdir -p .ssh; chmod 700 .ssh; touch .ssh/authorized_keys; grep -q '$(cat ${FILE}.pub)' .ssh/authorized_keys || cat ~/${FILE_WO_PATH}.pub >> .ssh/authorized_keys; chmod 600 .ssh/authorized_keys; rm ~/${FILE_WO_PATH}.pub\";
+            match_max 100000;
+            expect {
+                timeout {
+                    send_user \"timed out waiting for password prompt\n\"
+                    exit 1
+                }
+                eof {
+                    send_user \"ssh disconnected\n\"
+                    exit 1
+                }
+                *assword:* { 
+                    send ${PW}\n
+                    exp_continue
+                }
+            }
+            "
+
+    fi
+
+done
+
+IFS=$"$IFSsave"
+
+echo Done.

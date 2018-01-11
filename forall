@@ -1,0 +1,30 @@
+#!/bin/bash
+# Executes COMMAND for each host in HOSTS (not ON each host)
+
+usage(){
+  echo 'usage: forall HOSTS COMMAND'
+  echo '       COMMAND should contain $HOST or ${HOST}.'
+}
+
+if [[ $# -lt 2 ]]; then usage; exit 0; fi
+
+HOSTS=$1
+COMMAND=$2
+
+IFSsave="$IFS"; IFS=$'\n' # temporarily change Internal Field Separator to newline
+
+for HOST in `cat ${HOSTS}`; do
+
+  # ignore blank and commented lines
+  if [[ $HOST != \#* ]] && [ ${#HOST} -ne 0 ]; then
+
+    echo Executing ${COMMAND}
+    eval "${COMMAND}"
+
+  fi
+
+done
+
+IFS=$"$IFSsave"
+
+echo Done.

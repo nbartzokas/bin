@@ -1,0 +1,6 @@
+#!/bin/bash
+# Disable RTC Reporting which clogs logs
+# Helpful when using Cinder for video playback and RTC clogs logs
+mv /usr/libexec/rtcreportingd /usr/libexec/rtcreportingd.backup
+launchctl remove com.apple.rtcreportingd
+sudo killall rtcreportingd

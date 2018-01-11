@@ -1,0 +1,4 @@
+#!/bin/bash
+# show energy saver schedule
+pmset -g sched
+

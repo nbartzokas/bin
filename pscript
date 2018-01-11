@@ -1,0 +1,24 @@
+#!/bin/bash
+# Executes SCRIPT on each host in HOSTS.
+# Logs std and err to log/[SCRIPT]_[std|err]
+
+# pssh 
+#   -A                    # ask for password
+#   -h $1                 # hostfile 
+#   -i                    # display inline
+#   -o logs/${2##*/}_out  # std logs
+#   -e logs/${2##*/}_err  # err logs
+#   -x "-T"               # supress pseudo-terminal errors 
+#   -I < $2               # script
+
+usage(){
+  echo usage: pscript HOSTS SCRIPT
+}
+
+if [[ $# -lt 2 ]]; then usage; exit 0; fi
+
+HOSTS=$1
+SCRIPT=$2
+SCRIPT_NOPATH=${SCRIPT##*/}
+
+pssh -A -h $HOSTS -i -o log/${SCRIPT_NOPATH}_out -e log/${SCRIPT_NOPATH}_err -x "-T" -I < $SCRIPT

@@ -1,0 +1,5 @@
+#!/bin/bash
+# OS X: Join display spaces
+# i.e. In `System Preferences > Mission Control` uncheck `Displays have separate Spaces`
+defaults write com.apple.spaces spans-displays -bool TRUE
+sudo killall -KILL loginwindow

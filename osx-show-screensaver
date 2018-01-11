@@ -1,0 +1,4 @@
+#!/bin/bash
+# show screensaver settings
+defaults read com.apple.screensaver
+

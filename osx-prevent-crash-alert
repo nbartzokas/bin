@@ -1,0 +1,19 @@
+#!/bin/bash
+# prevent crash alert
+
+usage(){
+  echo usage: osx-prevent-crash-alert APP
+}
+
+if [[ $# -lt 1 ]]; then usage; exit 0; fi
+    
+APP=$1
+
+defaults write ${APP} NSQuitAlwaysKeepsWindows -bool false
+sudo defaults write ${APP} NSQuitAlwaysKeepsWindows -bool false
+defaults write NSGlobalDomain NSQuitAlwaysKeepsWindows -bool false
+sudo defaults write NSGlobalDomain NSQuitAlwaysKeepsWindows -bool false
+rm -r ~/Library/Saved\ Application\ State/${APP}.savedState
+sudo rm -r /var/root/Library/Saved\ Application\ State/${APP}.savedState
+defaults write com.apple.CrashReporter DialogType none
+sudo defaults write com.apple.CrashReporter DialogType none
